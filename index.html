@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>UJASUSI-PREDICT — Intelligence Prediction Engine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --green: #00ff9d;
+    --red: #ff2244;
+    --gold: #ffd700;
+    --blue: #00ccff;
+    --bg: #060a14;
+    --panel: rgba(10,14,26,0.96);
+    --border: #1e2a3e;
+    --text: #c8d0e0;
+    --dim: #6070a0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,157,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,157,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Scanlines */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  /* Header */
+  .header {
+    border-bottom: 1px solid rgba(0,255,157,0.15);
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .header-meta {
+    color: var(--green);
+    font-size: 10px;
+    letter-spacing: 3px;
+    opacity: 0.6;
+    margin-bottom: 10px;
+  }
+
+  .header h1 {
+    font-size: clamp(28px, 6vw, 52px);
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(0,255,157,0.25);
+  }
+
+  .header h1 span { color: var(--green); }
+
+  .header-sub {
+    color: var(--dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-top: 6px;
+  }
+
+  .classified-tag {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 3px 12px;
+    border: 1px solid rgba(255,34,68,0.4);
+    color: var(--red);
+    font-size: 10px;
+    letter-spacing: 3px;
+  }
+
+  /* Panel */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 28px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(20px);
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .panel-label {
+    color: var(--green);
+    font-size: 10px;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+  }
+
+  /* API key section */
+  .key-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .key-row input {
+    flex: 1;
+    background: rgba(6,10,20,0.8);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .key-row input:focus { border-color: rgba(0,255,157,0.4); }
+
+  .key-note {
+    color: var(--dim);
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+
+  .key-note a { color: var(--blue); text-decoration: none; }
+
+  /* Domain chips */
+  .chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .chip {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    padding: 6px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+
+  .chip:hover { border-color: var(--green); color: var(--green); }
+  .chip.active-green { border-color: var(--green); color: var(--green); background: rgba(0,255,157,0.08); }
+  .chip.active-blue { border-color: var(--blue); color: var(--blue); background: rgba(0,204,255,0.08); }
+
+  .field-label {
+    color: var(--dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  textarea {
+    width: 100%;
+    background: rgba(6,10,20,0.8);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Crimson Pro', serif;
+    font-size: 14px;
+    padding: 14px;
+    resize: vertical;
+    outline: none;
+    line-height: 1.6;
+    transition: border-color 0.2s;
+    margin-bottom: 6px;
+  }
+
+  textarea:focus { border-color: rgba(0,255,157,0.3); }
+  textarea::placeholder { color: #2a3050; }
+
+  .char-count {
+    color: #2a3050;
+    font-size: 10px;
+    margin-bottom: 20px;
+  }
+
+  .btn-run {
+    width: 100%;
+    padding: 14px;
+    background: rgba(0,255,157,0.06);
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .btn-run:hover { background: rgba(0,255,157,0.12); }
+  .btn-run:disabled { border-color: var(--border); color: var(--dim); cursor: not-allowed; background: transparent; }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 32px;
+  }
+
+  .loading-line {
+    color: var(--green);
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  /* Results */
+  .result-panel {
+    background: var(--panel);
+    border-radius: 5px;
+    padding: 28px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .classif-banner {
+    text-align: center;
+    color: var(--red);
+    font-size: 10px;
+    letter-spacing: 4px;
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+  }
+
+  .threat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .threat-label-group .sub { color: var(--dim); font-size: 10px; letter-spacing: 2px; margin-bottom: 6px; }
+  .threat-name { font-size: 36px; font-weight: 900; letter-spacing: 4px; }
+  .threat-index-group { text-align: right; }
+  .threat-index { font-size: 52px; font-weight: 900; }
+
+  /* Arc SVG */
+  .arcs-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .arc-card {
+    background: rgba(6,10,20,0.8);
+    border-left: 3px solid;
+    border-radius: 4px;
+    padding: 16px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .arc-card .arc-info .arc-label { font-size: 10px; letter-spacing: 2px; margin-bottom: 6px; }
+  .arc-card .arc-info .arc-desc { font-family: 'Crimson Pro', serif; font-size: 13px; line-height: 1.6; color: var(--text); }
+
+  /* Confidence bar */
+  .conf-panel {
+    background: rgba(6,10,20,0.8);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+
+  .conf-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .conf-label { color: var(--dim); font-size: 10px; letter-spacing: 2px; }
+  .conf-track { background: #1a1f2e; border-radius: 2px; height: 4px; margin-bottom: 10px; }
+  .conf-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+  .conf-text { font-family: 'Crimson Pro', serif; font-size: 12px; line-height: 1.6; color: #8090b0; }
+
+  /* Intel grid */
+  .intel-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 600px) { .intel-grid { grid-template-columns: 1fr; } }
+
+  .intel-box {
+    background: rgba(6,10,20,0.8);
+    border-radius: 4px;
+    padding: 14px;
+  }
+
+  .intel-box-label { font-size: 9px; letter-spacing: 2px; margin-bottom: 10px; }
+  .intel-item { display: flex; gap: 8px; margin-bottom: 6px; font-family: 'Crimson Pro', serif; font-size: 12px; line-height: 1.5; }
+  .intel-dot { opacity: 0.7; flex-shrink: 0; }
+
+  /* Flags */
+  .flags-row { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .flags-label { color: var(--dim); font-size: 10px; letter-spacing: 2px; }
+  .flag-box { width: 14px; height: 14px; border-radius: 2px; transition: all 0.3s; }
+  .flag-count { color: var(--red); font-size: 10px; letter-spacing: 1px; }
+
+  /* Analyst note */
+  .analyst-box {
+    background: rgba(0,255,157,0.02);
+    border: 1px solid rgba(0,255,157,0.15);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .analyst-box .box-label { color: var(--green); font-size: 9px; letter-spacing: 3px; margin-bottom: 12px; }
+  .analyst-box .box-text { font-family: 'Crimson Pro', serif; font-style: italic; font-size: 14px; line-height: 1.8; }
+
+  .intel-frag {
+    background: rgba(255,34,68,0.03);
+    border: 1px solid rgba(255,34,68,0.15);
+    border-radius: 4px;
+    padding: 16px;
+  }
+
+  .intel-frag .box-label { color: var(--red); font-size: 9px; letter-spacing: 3px; margin-bottom: 10px; }
+  .intel-frag .box-text { font-family: 'Crimson Pro', serif; font-size: 12px; line-height: 1.6; color: #8090b0; }
+
+  .result-footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .result-footer span { color: #2a3050; font-size: 9px; letter-spacing: 1px; }
+
+  /* Error */
+  .error-box {
+    background: rgba(255,34,68,0.05);
+    border: 1px solid rgba(255,34,68,0.3);
+    border-radius: 4px;
+    padding: 20px;
+    color: var(--red);
+    font-size: 12px;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    text-align: center;
+    white-space: pre-wrap;
+  }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid #0e1624;
+    padding-top: 20px;
+    text-align: center;
+    color: #2a3050;
+    font-size: 9px;
+    letter-spacing: 2px;
+    line-height: 1.8;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 0.7; }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .cursor { animation: blink 1s infinite; }
+
+  .sep { border: none; border-top: 1px solid var(--border); margin: 8px 0 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-meta" id="session-meta">UJASUSI INTELLIGENCE SYSTEMS ◈ INITIALISING...</div>
+    <h1>UJASUSI<span>-</span>PREDICT</h1>
+    <div class="header-sub">INTELLIGENCE PREDICTION ENGINE ◈ PROBABILISTIC SCENARIO ASSESSMENT</div>
+    <div class="classified-tag">⚠ CLASSIFIED ◈ AUTHORISED ANALYSTS ONLY ◈ DO NOT DISTRIBUTE</div>
+  </div>
+
+  <!-- Input Panel -->
+  <div class="panel">
+    <div class="panel-label">◈ CONFIGURATION & SCENARIO INPUT</div>
+
+    <!-- API Key -->
+    <label class="field-label">ANTHROPIC API KEY</label>
+    <div class="key-row">
+      <input type="password" id="api-key" placeholder="sk-ant-api03-..." autocomplete="off"/>
+    </div>
+    <div class="key-note">
+      Your key is never stored or transmitted anywhere except directly to Anthropic.
+      Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+    </div>
+
+    <hr class="sep"/>
+
+    <!-- Domain -->
+    <label class="field-label">INTELLIGENCE DOMAIN</label>
+    <div class="chip-group" id="domain-chips"></div>
+
+    <!-- Timeframe -->
+    <label class="field-label">ASSESSMENT TIMEFRAME</label>
+    <div class="chip-group" id="time-chips"></div>
+
+    <!-- Scenario -->
+    <label class="field-label">SCENARIO DESCRIPTION</label>
+    <textarea id="scenario" rows="5"
+      placeholder="Describe the intelligence scenario for probabilistic assessment. Include actors, geography, trigger events, and contextual factors where known..."></textarea>
+    <div class="char-count" id="char-count">0 characters ◈ CTRL+ENTER to submit</div>
+
+    <button class="btn-run" id="run-btn" onclick="runPrediction()">◈ RUN PREDICTION ASSESSMENT</button>
+  </div>
+
+  <!-- Loading -->
+  <div class="panel loading" id="loading" style="display:none;">
+    <div class="loading-line" style="animation-delay:0s">◎ PARSING SCENARIO PARAMETERS…</div>
+    <div class="loading-line" style="animation-delay:0.3s">◎ QUERYING INTELLIGENCE CORPUS…</div>
+    <div class="loading-line" style="animation-delay:0.6s">◎ RUNNING BAYESIAN INFERENCE…</div>
+    <div class="loading-line" style="animation-delay:0.9s">◎ CALIBRATING CONFIDENCE INTERVALS…</div>
+    <div class="loading-line" style="animation-delay:1.2s">◎ ASSEMBLING ASSESSMENT BRIEF…</div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="error-box" style="display:none;"></div>
+
+  <!-- Result -->
+  <div id="result-panel" style="display:none;"></div>
+
+  <div class="footer">
+    UJASUSI INTELLIGENCE SYSTEMS ◈ PREDICTION ENGINE ◈ FOR AUTHORISED ANALYTICAL USE ONLY<br/>
+    THIS SYSTEM PRODUCES PROBABILISTIC ASSESSMENTS — NOT STATEMENTS OF FACT ◈ ALL OUTPUTS REQUIRE HUMAN ANALYST REVIEW
+  </div>
+
+</div>
+
+<script>
+  const DOMAINS = [
+    { id: "regime", label: "⚑ Regime Stability" },
+    { id: "conflict", label: "⚔ Armed Conflict" },
+    { id: "intel_ops", label: "◎ Intelligence Operations" },
+    { id: "election", label: "✗ Electoral Integrity" },
+    { id: "coup", label: "↯ Coup / Power Transfer" },
+    { id: "sanctions", label: "⊘ Sanctions / Isolation" },
+    { id: "terror", label: "◈ Terrorism / Extremism" },
+    { id: "disinformation", label: "≋ Disinformation" },
+  ];
+
+  const TIMEFRAMES = ["72 hours", "7 days", "30 days", "90 days", "6 months", "12 months"];
+
+  let selectedDomain = "regime";
+  let selectedTime = "30 days";
+
+  // Session ID
+  const sessionId = Math.random().toString(36).slice(2,10).toUpperCase();
+  document.getElementById('session-meta').textContent =
+    `UJASUSI INTELLIGENCE SYSTEMS ◈ SESSION ${sessionId} ◈ ${new Date().toUTCString().toUpperCase()}`;
+
+  // Build domain chips
+  const dc = document.getElementById('domain-chips');
+  DOMAINS.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (d.id === selectedDomain ? ' active-green' : '');
+    b.textContent = d.label;
+    b.onclick = () => {
+      selectedDomain = d.id;
+      dc.querySelectorAll('.chip').forEach(c => c.className = 'chip');
+      b.className = 'chip active-green';
+    };
+    dc.appendChild(b);
+  });
+
+  // Build timeframe chips
+  const tc = document.getElementById('time-chips');
+  TIMEFRAMES.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (t === selectedTime ? ' active-blue' : '');
+    b.textContent = t;
+    b.onclick = () => {
+      selectedTime = t;
+      tc.querySelectorAll('.chip').forEach(c => c.className = 'chip');
+      b.className = 'chip active-blue';
+    };
+    tc.appendChild(b);
+  });
+
+  // Char count
+  const scen = document.getElementById('scenario');
+  scen.addEventListener('input', () => {
+    document.getElementById('char-count').textContent = `${scen.value.length} characters ◈ CTRL+ENTER to submit`;
+  });
+  scen.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') runPrediction(); });
+
+  const THREAT_COLORS = { CRITICAL: '#ff2244', HIGH: '#ff6b35', ELEVATED: '#ffd700', MODERATE: '#00ccff', LOW: '#00ff9d' };
+  const CONF_COLORS = { HIGH: '#00ff9d', MODERATE: '#ffd700', LOW: '#ff6b35' };
+  const CONF_BARS = { HIGH: 85, MODERATE: 58, LOW: 30 };
+
+  function makeSVG(pct, color) {
+    const r = 42, circ = 2 * Math.PI * r;
+    const dash = (pct / 100) * circ;
+    return `<svg viewBox="0 0 100 100" width="90" height="90" style="transform:rotate(-90deg);flex-shrink:0">
+      <circle cx="50" cy="50" r="${r}" fill="none" stroke="#1a1f2e" stroke-width="9"/>
+      <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="9"
+        stroke-dasharray="${dash} ${circ - dash}" stroke-linecap="round"
+        style="filter:drop-shadow(0 0 5px ${color});transition:stroke-dasharray 1.2s ease"/>
+      <text x="50" y="55" text-anchor="middle" fill="${color}" font-size="18"
+        font-family="Share Tech Mono,monospace" font-weight="bold"
+        style="transform:rotate(90deg);transform-origin:50px 50px;filter:drop-shadow(0 0 3px ${color})">${pct}%</text>
+    </svg>`;
+  }
+
+  async function runPrediction() {
+    const apiKey = document.getElementById('api-key').value.trim();
+    const scenario = scen.value.trim();
+
+    if (!apiKey) { showError('API KEY REQUIRED — Enter your Anthropic API key above.'); return; }
+    if (!apiKey.startsWith('sk-ant-')) { showError('INVALID KEY FORMAT — Key must start with sk-ant-'); return; }
+    if (!scenario) { showError('SCENARIO REQUIRED — Describe the intelligence scenario.'); return; }
+
+    setLoading(true);
+    document.getElementById('error-box').style.display = 'none';
+    document.getElementById('result-panel').style.display = 'none';
+
+    const domainLabel = DOMAINS.find(d => d.id === selectedDomain)?.label.replace(/^. /, '') || selectedDomain;
+
+    const systemPrompt = `You are UJASUSI-PREDICT, a classified intelligence prediction engine for professional analysts specialising in African and global security affairs. Produce structured probabilistic assessments.
+
+Respond ONLY with a valid JSON object — no preamble, no markdown fences.
+
+Schema:
+{
+  "threat_index": <integer 0-100>,
+  "threat_label": <"CRITICAL"|"HIGH"|"ELEVATED"|"MODERATE"|"LOW">,
+  "primary_probability": <integer 0-100>,
+  "primary_outcome": <string, 1 sentence>,
+  "alternate_probability": <integer 0-100>,
+  "alternate_outcome": <string, 1 sentence>,
+  "null_probability": <integer 0-100>,
+  "confidence": <"HIGH"|"MODERATE"|"LOW">,
+  "confidence_rationale": <string, 1-2 sentences>,
+  "key_indicators": [<string>,<string>,<string>],
+  "named_actors": [<string>,<string>],
+  "intelligence_gaps": [<string>,<string>],
+  "analyst_note": <string, 2-3 sentences, senior analyst voice>,
+  "collection_priorities": [<string>,<string>],
+  "warning_flags": <integer 0-5>,
+  "raw_intel_fragment": <string, authentic-sounding SIGINT/HUMINT fragment, 1 sentence>
+}
+
+Rules: primary_probability + alternate_probability + null_probability = 100. British English. Practitioner language. No hedging. No forbidden words: delve, unpack, paradigm, ecosystem, groundbreaking, holistic, seamless, leverage, synergy.`;
+
+    const userPrompt = `DOMAIN: ${domainLabel}\nTIMEFRAME: ${selectedTime}\nSCENARIO: ${scenario}\n\nGenerate a full intelligence prediction assessment.`;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 1200,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const msg = data?.error?.message || JSON.stringify(data);
+        showError(`ANTHROPIC ERROR ${response.status}:\n${msg}`);
+        return;
+      }
+
+      const text = data.content?.map(b => b.text || '').join('') || '';
+      const clean = text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+      renderResult(parsed, domainLabel);
+
+    } catch (err) {
+      showError(`CONNECTION ERROR:\n${err.message}\n\nIf you see a CORS error, your browser is blocking the direct API call. This is rare — try a different browser or disable browser extensions.`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderResult(r, domainLabel) {
+    const tc = THREAT_COLORS[r.threat_label] || '#00ff9d';
+    const cc = CONF_COLORS[r.confidence] || '#ffd700';
+    const cb = CONF_BARS[r.confidence] || 60;
+    const now = new Date().toUTCString().toUpperCase();
+
+    const intelSections = [
+      { label: 'KEY INDICATORS', items: r.key_indicators, color: '#00ff9d' },
+      { label: 'INTELLIGENCE GAPS', items: r.intelligence_gaps, color: '#ff6b35' },
+      { label: 'NAMED ACTORS', items: r.named_actors, color: '#ffd700' },
+      { label: 'COLLECTION PRIORITIES', items: r.collection_priorities, color: '#00ccff' },
+    ];
+
+    const flagsHTML = Array.from({length:5}).map((_,i) =>
+      `<div class="flag-box" style="background:${i < r.warning_flags ? '#ff2244' : '#1a1f2e'};${i < r.warning_flags ? 'box-shadow:0 0 6px #ff2244' : ''}"></div>`
+    ).join('');
+
+    const panel = document.getElementById('result-panel');
+    panel.innerHTML = `
+      <div class="result-panel" style="border:1px solid ${tc}33">
+        <div class="classif-banner">TOP SECRET // UJASUSI PREDICT // NOFORN</div>
+
+        <div class="threat-row">
+          <div class="threat-label-group">
+            <div class="sub">THREAT DESIGNATION</div>
+            <div class="threat-name" style="color:${tc};text-shadow:0 0 20px ${tc}44">${r.threat_label}</div>
+          </div>
+          <div class="threat-index-group">
+            <div class="sub" style="text-align:right">THREAT INDEX</div>
+            <div class="threat-index" style="color:${tc};text-shadow:0 0 20px ${tc}44">${r.threat_index}</div>
+          </div>
+        </div>
+
+        <div style="color:var(--dim);font-size:10px;letter-spacing:2px;margin-bottom:14px">PROBABILISTIC OUTCOMES</div>
+        <div class="arcs-grid">
+          <div class="arc-card" style="border-left-color:#00ff9d">
+            ${makeSVG(r.primary_probability, '#00ff9d')}
+            <div class="arc-info">
+              <div class="arc-label" style="color:#00ff9d">PRIMARY OUTCOME</div>
+              <div class="arc-desc">${r.primary_outcome}</div>
+            </div>
+          </div>
+          <div class="arc-card" style="border-left-color:#ffd700">
+            ${makeSVG(r.alternate_probability, '#ffd700')}
+            <div class="arc-info">
+              <div class="arc-label" style="color:#ffd700">ALTERNATE OUTCOME</div>
+              <div class="arc-desc">${r.alternate_outcome}</div>
+            </div>
+          </div>
+          <div class="arc-card" style="border-left-color:#00ccff">
+            ${makeSVG(r.null_probability, '#00ccff')}
+            <div class="arc-info">
+              <div class="arc-label" style="color:#00ccff">NULL — SCENARIO DOES NOT MATERIALISE</div>
+              <div class="arc-desc">Assessment calibrated against base rate of non-materialisation for comparable scenarios.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="conf-panel" style="border:1px solid ${cc}22">
+          <div class="conf-row">
+            <span class="conf-label">ANALYTICAL CONFIDENCE</span>
+            <span style="color:${cc};font-size:11px;letter-spacing:2px;font-weight:bold">${r.confidence} CONFIDENCE</span>
+          </div>
+          <div class="conf-track"><div class="conf-fill" style="width:${cb}%;background:${cc};box-shadow:0 0 8px ${cc}"></div></div>
+          <div class="conf-text">${r.confidence_rationale}</div>
+        </div>
+
+        <div class="intel-grid">
+          ${intelSections.map(s => `
+            <div class="intel-box" style="border:1px solid ${s.color}22">
+              <div class="intel-box-label" style="color:${s.color}">${s.label}</div>
+              ${(s.items||[]).map(item => `
+                <div class="intel-item">
+                  <span class="intel-dot" style="color:${s.color}">◎</span>
+                  <span>${item}</span>
+                </div>`).join('')}
+            </div>`).join('')}
+        </div>
+
+        <div class="flags-row">
+          <span class="flags-label">WARNING FLAGS ACTIVE:</span>
+          ${flagsHTML}
+          <span class="flag-count">${r.warning_flags}/5</span>
+        </div>
+
+        <div class="analyst-box">
+          <div class="box-label">◈ SENIOR ANALYST ASSESSMENT</div>
+          <div class="box-text" style="color:var(--text)">${r.analyst_note}</div>
+        </div>
+
+        <div class="intel-frag">
+          <div class="box-label">◈ SUPPORTING RAW INTELLIGENCE FRAGMENT ◈ HANDLE VIA BIGOT LIST</div>
+          <div class="box-text">${r.raw_intel_fragment}</div>
+        </div>
+
+        <div class="result-footer">
+          <span>GENERATED ${now} ◈ UJASUSI-PREDICT v3.0</span>
+          <span>DOMAIN: ${domainLabel.toUpperCase()} ◈ TF: ${selectedTime.toUpperCase()}</span>
+        </div>
+      </div>
+    `;
+
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function showError(msg) {
+    const eb = document.getElementById('error-box');
+    eb.textContent = '⚠ ' + msg;
+    eb.style.display = 'block';
+    setLoading(false);
+  }
+
+  function setLoading(state) {
+    document.getElementById('loading').style.display = state ? 'block' : 'none';
+    document.getElementById('run-btn').disabled = state;
+    document.getElementById('run-btn').textContent = state
+      ? '◈ PROCESSING ASSESSMENT ▋'
+      : '◈ RUN PREDICTION ASSESSMENT';
+  }
+</script>
+</body>
+</html>
