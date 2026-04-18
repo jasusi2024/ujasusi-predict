@@ -598,15 +598,14 @@ Rules: primary_probability + alternate_probability + null_probability = 100. Bri
     const userPrompt = `DOMAIN: ${domainLabel}\nTIMEFRAME: ${selectedTime}\nSCENARIO: ${scenario}\n\nGenerate a full intelligence prediction assessment.`;
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-opus-4-5',
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 1200,
           system: systemPrompt,
           messages: [{ role: 'user', content: userPrompt }]
@@ -627,7 +626,7 @@ Rules: primary_probability + alternate_probability + null_probability = 100. Bri
       renderResult(parsed, domainLabel);
 
     } catch (err) {
-      showError(`CONNECTION ERROR:\n${err.message}\n\nIf you see a CORS error, your browser is blocking the direct API call. This is rare — try a different browser or disable browser extensions.`);
+      showError(`CONNECTION ERROR:\n${err.message}`);
     } finally {
       setLoading(false);
     }
